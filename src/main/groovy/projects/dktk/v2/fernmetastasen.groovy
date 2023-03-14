@@ -1,6 +1,5 @@
 package projects.dktk.v2
 
-
 import org.hl7.fhir.r4.model.Observation
 
 import static de.kairos.fhir.centraxx.metamodel.RootEntities.metastasis
@@ -8,9 +7,11 @@ import static de.kairos.fhir.centraxx.metamodel.RootEntities.metastasis
 /**
  * Represented by a CXX Metastasis
  * Specified by https://simplifier.net/oncology/fernmetastasen-duplicate-2
+ * hints:
+ *  Reference to focus condition has been added additionally, because a reverse reference is not possible yet.
  *
  * @author Mike Wähnert
- * @since CXX.v.3.17.1.6, v.3.17.2
+ * @since CXX.v.3.18.1.21, CXX.v.3.18.2
  */
 observation {
 
@@ -63,6 +64,12 @@ observation {
         system = "http://dktk.dkfz.de/fhir/onco/core/CodeSystem/FMLokalisationCS"
         code = (context.source[metastasis().localisationCodeDict().code()] as String).toUpperCase()
       }
+    }
+  }
+
+  if (context.source[metastasis().tumour()]) {
+    focus {
+      reference = "Condition/" + context.source[metastasis().tumour().centraxxDiagnosis().id()]
     }
   }
 }

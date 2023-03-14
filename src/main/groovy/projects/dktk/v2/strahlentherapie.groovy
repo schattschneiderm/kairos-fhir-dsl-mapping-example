@@ -23,8 +23,8 @@ procedure {
 
   category {
     coding {
-      system = "urn:dktk:dataelement:34:2"
-      code = "ST"
+      system = "http://dktk.dkfz.de/fhir/onco/core/CodeSystem/SYSTTherapieartCS"
+      code = "ST" //Strahlentherapie
     }
   }
 
@@ -38,8 +38,10 @@ procedure {
     }
   }
 
-  reasonReference {
-    reference = "Condition/" + context.source[radiationTherapy().tumour().centraxxDiagnosis().id()]
+  if (context.source[radiationTherapy().tumour()]) {
+    reasonReference {
+      reference = "Condition/" + context.source[radiationTherapy().tumour().centraxxDiagnosis().id()]
+    }
   }
 
   if (context.source[radiationTherapy().intentionDict()]) {

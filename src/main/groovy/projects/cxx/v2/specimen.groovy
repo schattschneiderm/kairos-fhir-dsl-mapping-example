@@ -1,8 +1,8 @@
 package projects.cxx.v2
 
-import de.kairos.centraxx.common.types.sample.SampleKind
 import de.kairos.centraxx.fhir.r4.utils.FhirUrls
 import de.kairos.fhir.centraxx.metamodel.IdContainerType
+import de.kairos.fhir.centraxx.metamodel.enums.SampleKind
 
 import static de.kairos.fhir.centraxx.metamodel.AbstractEntity.ID
 import static de.kairos.fhir.centraxx.metamodel.AbstractIdContainer.ID_CONTAINER_TYPE
@@ -65,6 +65,7 @@ specimen {
     }
   }
 
+  // TODO Change ID Type
   final def patIdContainer = context.source[sample().patientContainer().idContainer()]?.find {
     "COVID-19-PATIENTID" == it[ID_CONTAINER_TYPE]?.getAt(IdContainerType.CODE)
   }
@@ -317,13 +318,19 @@ specimen {
           url = "https://fhir.centraxx.de/extension/sample/sampleLocationPath"
           valueString = context.source[sample().sampleLocation().locationPath()]
         }
-        extension {
-          url = "https://fhir.centraxx.de/extension/sample/xPosition"
-          valueInteger = context.source[sample().xPosition()] as Integer
+        final Integer xPos = context.source[sample().xPosition()] as Integer
+        if (xPos) { // necessary, because groovy interprets 0 to false
+          extension {
+            url = "https://fhir.centraxx.de/extension/sample/xPosition"
+            valueInteger = xPos
+          }
         }
-        extension {
-          url = "https://fhir.centraxx.de/extension/sample/yPosition"
-          valueInteger = context.source[sample().yPosition()] as Integer
+        final Integer yPos = context.source[sample().yPosition()] as Integer
+        if (yPos) {
+          extension {
+            url = "https://fhir.centraxx.de/extension/sample/yPosition"
+            valueInteger = yPos
+          }
         }
       }
     }

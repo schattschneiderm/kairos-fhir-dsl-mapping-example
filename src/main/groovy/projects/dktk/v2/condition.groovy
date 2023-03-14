@@ -3,7 +3,6 @@ package projects.dktk.v2
 
 import static de.kairos.fhir.centraxx.metamodel.AbstractEntity.ID
 import static de.kairos.fhir.centraxx.metamodel.RootEntities.diagnosis
-
 /**
  * Represented by a CXX Diagnosis
  * Specified by https://simplifier.net/oncology/primaerdiagnose
@@ -51,12 +50,24 @@ condition {
   }
 
   onsetDateTime {
-    date = context.source[diagnosis().diagnosisDate().date()]
+    date = normalizeDate(context.source[diagnosis().diagnosisDate().date()] as String)
   }
+
+  final String multipleCodingSymbol = mapUsage(context.source[diagnosis().icdEntry().usage()] as String)
 
   code {
     coding {
-      system = "http://fhir.de/CodeSystem/dimdi/icd-10-gm"
+      if (multipleCodingSymbol != null){
+        extension {
+          url = "http://fhir.de/StructureDefinition/icd-10-gm-mehrfachcodierungs-kennzeichen"
+          valueCoding {
+            system = "http://fhir.de/CodeSystem/icd-10-gm-mehrfachcodierungs-kennzeichen"
+            version = "2021"
+            code = multipleCodingSymbol
+          }
+        }
+      }
+      system = "http://fhir.de/CodeSystem/bfarm/icd-10-gm"
       code = context.source[diagnosis().icdEntry().code()] as String
       version = context.source[diagnosis().icdEntry().catalogue().catalogueVersion()]
     }
@@ -70,4 +81,40 @@ condition {
       }
     }
   }
+}
+
+static String mapUsage(final String usage){
+  switch (usage){
+    case "optional":
+      return "!"
+    case "aster":
+      return "*"
+    case "dagger":
+      return "†"
+    default:
+      return null
+  }
+}
+
+// usage with enum with 1.16.0 kairos-fhir-dsl
+/*static String mapUsage(final IcdEntryUsage usage){
+  switch (usage){
+    case IcdEntryUsage.OPTIONAL :
+      return "!"
+    case IcdEntryUsage.ASTER:
+      return "*"
+    case IcdEntryUsage.DAGGER:
+      return "†"
+    default:
+      return null
+  }
+}*/
+
+/**
+ * removes milli seconds and time zone.
+ * @param dateTimeString the date time string
+ * @return the result might be something like "1989-01-15T00:00:00"
+ */
+static String normalizeDate(final String dateTimeString) {
+  return dateTimeString != null ? dateTimeString.substring(0, 19) : null
 }
