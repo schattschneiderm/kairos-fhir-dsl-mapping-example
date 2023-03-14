@@ -90,6 +90,7 @@ specimen {
     }
   }
 
+
   status = context.source[sample().restAmount().amount()] > 0 ? "available" : "unavailable"
 
   type {
@@ -182,13 +183,13 @@ specimen {
       value = context.source[sample().restAmount().amount()] as Number
       unit = toHubContainerCapacityUnit(context.source[sample().sampleType().code()])
       system = "urn:centraxx"
+    } "urn:centraxx"
     }
-  }
 
-  extension {
-    url = FhirUrls.Extension.SAMPLE_CATEGORY
-    valueCoding {
-      system = "urn:centraxx"
+    extension {
+      url = FhirUrls.Extension.Sample.
+              valueCoding {
+                system =
       code = context.source[SAMPLE_CATEGORY]
     }
   }

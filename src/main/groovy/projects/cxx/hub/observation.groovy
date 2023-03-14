@@ -1,4 +1,4 @@
-package projects.cxx.v2
+package projects.cxx.hub
 
 import de.kairos.fhir.centraxx.metamodel.AbstractCatalog
 import de.kairos.fhir.centraxx.metamodel.CatalogEntry
@@ -38,6 +38,8 @@ observation {
   }
 
 
+
+
   final def patIdContainer = context.source[laborMapping().relatedPatient().idContainer()]?.find {
     "LIMSPSN" == it[ID_CONTAINER_TYPE]?.getAt(IdContainerType.CODE)
   }
@@ -55,6 +57,17 @@ observation {
     }
   }
 
+  specimen {
+    identifier {
+      value = patIdContainer[PSN]
+      type {
+        coding {
+          system = "urn:centraxx"
+          code = patIdContainer[ID_CONTAINER_TYPE]?.getAt(IdContainerType.CODE) as String
+        }
+      }
+  }
+
   method {
     coding {
       system = "urn:centraxx"
@@ -62,7 +75,7 @@ observation {
       code = context.source[laborMapping().laborFinding().laborMethod().code()] as String
     }
   }
-
+/*
   context.source[laborMapping().laborFinding().laborFindingLaborValues()].each { final lflv ->
     component {
       code {
@@ -112,7 +125,7 @@ observation {
           }
         }
       }
-    }
+    }*/
   }
 }
 
