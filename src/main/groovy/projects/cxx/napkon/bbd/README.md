@@ -1,0 +1,1 @@
+Sync direction: from BioBank Dresden (BBD) to NUM NUKLEUS LIMS

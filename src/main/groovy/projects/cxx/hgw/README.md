@@ -1,0 +1,1 @@
+# Mapping from local Centraxx instance to NUM-LIMS-CentraXX
