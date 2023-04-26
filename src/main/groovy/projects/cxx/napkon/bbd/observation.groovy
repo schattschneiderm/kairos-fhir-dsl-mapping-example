@@ -1,6 +1,6 @@
 package projects.cxx.napkon.bbd
 
-
+import de.kairos.centraxx.fhir.r4.utils.FhirUrls
 import de.kairos.fhir.centraxx.metamodel.IdContainer
 import de.kairos.fhir.centraxx.metamodel.IdContainerType
 import de.kairos.fhir.centraxx.metamodel.LaborFindingLaborValue
@@ -12,6 +12,7 @@ import de.kairos.fhir.centraxx.metamodel.SampleIdContainer
 import de.kairos.fhir.centraxx.metamodel.Unity
 import de.kairos.fhir.centraxx.metamodel.UsageEntry
 import de.kairos.fhir.centraxx.metamodel.enums.LaborMappingType
+import de.kairos.fhir.centraxx.metamodel.enums.SampleCategory
 import org.hl7.fhir.r4.model.Observation
 
 import static de.kairos.fhir.centraxx.metamodel.LaborFindingLaborValue.LABOR_VALUE
@@ -26,7 +27,7 @@ import static de.kairos.fhir.centraxx.metamodel.RootEntities.laborMapping
  * @author Mario Schattschneider
  * @since v.1.19.0, CXX.v.3.18.2.3
  *
- * The mapping transforms specimen from the NUM Greifswald system to the BBD BioBank Dresden system.
+ * The mapping transforms Observations from the NUM CentraXX system to the BBD BioBank Dresden system.
  * Script to extract measurement results that contain only simple data types and single / multiple selections from controlled vocabulary.
  * Based on the assumption that the measurement profiles (LaborMethods), measurement parameters (LaborValues) and the associated controlled vocabulary are
  * defined with the same codes in both CXX instances. In this case, only one mapping to the oid of the value list in the target system is required
@@ -41,14 +42,26 @@ observation {
   println("Code" + context.source[laborMapping().laborFinding().laborMethod().code()])
 
   def isNUMRelevant = ["DZHKF", "NUM_REGISTRY_LIQUOR", "NUM_REGISTRY_URN", "NUM_REGISTRY_STOOL"].contains(context.source[laborMapping().laborFinding().laborMethod().code()])
-  println("isNUMRelevant" + Boolean.toString(isNUMRelevant))
-  println("isValid" + Boolean.toString(validMappings.contains(context.source[laborMapping().mappingType()] as LaborMappingType)))
+  println("isNUMRelevant " + Boolean.toString(isNUMRelevant))
+  println("isValid " + Boolean.toString(validMappings.contains(context.source[laborMapping().mappingType()] as LaborMappingType)))
 
   if (!(validMappings.contains(context.source[laborMapping().mappingType()] as LaborMappingType) && isNUMRelevant)) {
     return
   }
 
+  // Only Observations for MasterSamples
+
+  if (context.source[laborMapping().sample()] != null) {
+    print("Probe")
+  }
+
+
   id = "Observation/" + context.source[laborMapping().id()]
+
+  extension {
+    url = FhirUrls.Extension.UPDATE_WITH_OVERWRITE
+    valueBoolean = false
+  }
 
   status = Observation.ObservationStatus.UNKNOWN
 
@@ -76,7 +89,7 @@ observation {
       }
     }
   }
-
+  /*
   if (context.source[laborMapping().sample()] != null) {
     // Reference by identifier SampleId, because parent MasterSample might already exists in the target system
     // The external sample id of BBD is provided as sample id to NUM.
@@ -85,7 +98,36 @@ observation {
     }
 
     final String sampleIdTypeCode = context.source[laborMapping().sample().sampleType().code()]
-    final ArrayList<String> secondarySampleIdTypeCodes = ['', '']
+    final ArrayList<String> secondarySampleIdTypeCodes = ["NUM_nasen-rachenabstrich", "NUM_rachenabstrich"]
+
+    if (extSampleId) {
+      specimen {
+        identifier {
+          type {
+            coding {
+              code = (secondarySampleIdTypeCodes.contains(sampleIdTypeCode) ? "SECONDARYSAMPLEID" : "SAMPLEID")
+            }
+          }
+          value = extSampleId[SampleIdContainer.PSN]
+        }
+      }
+    }
+  }*/
+
+  if (context.source[laborMapping().sample()] != null) {
+    // Reference by identifier SampleId, because parent MasterSample might already exists in the target system
+    // The external sample id is provided as sample id to NUM.
+
+    // Don't export for Aliquotgroups and´ Aliquots
+    if ([SampleCategory.DERIVED, SampleCategory.ALIQUOTGROUP].contains(context.source[laborMapping().sample().sampleCategory()])) {
+      return
+    }
+
+    final def extSampleId = context.source[laborMapping().sample().idContainer()]?.find { final def entry ->
+      "EXTSAMPLEID" == entry[SampleIdContainer.ID_CONTAINER_TYPE]?.getAt(IdContainerType.CODE)
+    }
+    final String sampleIdTypeCode = context.source[laborMapping().sample().sampleType().code()]
+    final ArrayList<String> secondarySampleIdTypeCodes = ["NUM_nasen-rachenabstrich", "NUM_rachenabstrich"]
 
     if (extSampleId) {
       specimen {
@@ -100,6 +142,7 @@ observation {
       }
     }
   }
+
 
   effectiveDateTime = context.source[laborMapping().laborFinding().findingDate().date()]
 

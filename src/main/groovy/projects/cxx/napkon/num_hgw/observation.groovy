@@ -85,7 +85,7 @@ observation {
 
   if (context.source[laborMapping().sample()] != null) {
     // Reference by identifier SampleId, because parent MasterSample might already exists in the target system
-    // The external sample id of HUB is provided as sample id to DZHK.
+    // The external sample id is provided as sample id to NUM.
     final def extSampleId = context.source[laborMapping().sample().idContainer()]?.find { final def entry ->
       "SAMPLEID" == entry[SampleIdContainer.ID_CONTAINER_TYPE]?.getAt(IdContainerType.CODE)
     }
