@@ -1,11 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
   <groupId>de.kairos</groupId>
   <artifactId>kairos-fhir-dsl-mapping-example</artifactId>
-  <version>1.18.0-SNAPSHOT</version>
+  <version>1.33.0-SNAPSHOT</version>
   <description>This project contains kairos-fhir-dsl example mappings for the CentraXX FHIR custom export interface.</description>
   <url>https://github.com/kairos-fhir/kairos-fhir-dsl-mapping-example</url>
   <organization>
@@ -16,16 +15,20 @@
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <java.compiler.level>1.8</java.compiler.level>
-    <maven-compiler-plugin.version>3.6.1</maven-compiler-plugin.version>
-    <kairos-fhir-dsl.version>1.19.0-SNAPSHOT</kairos-fhir-dsl.version>
+    <maven-compiler-plugin.version>3.11.0</maven-compiler-plugin.version>
+    <kairos-fhir-dsl.version>1.35.0-SNAPSHOT</kairos-fhir-dsl.version>
     <junit-jupiter.version>5.8.2</junit-jupiter.version>
-    <maven-surefire-plugin.version>2.22.2</maven-surefire-plugin.version>
+    <maven-surefire-plugin.version>3.1.2</maven-surefire-plugin.version>
+    <gmavenplus-plugin.version>1.9.1</gmavenplus-plugin.version>
+    <findbugs.version>3.0.2</findbugs.version>
+    <slf4j-simple.version>1.7.36</slf4j-simple.version>
   </properties>
 
   <scm>
     <connection>scm:git:https://github.com/kairos-fhir/kairos-fhir-dsl-mapping-example.git</connection>
     <developerConnection>scm:git:https://github.com/kairos-fhir/kairos-fhir-dsl-mapping-example.git</developerConnection>
-    <tag>HEAD</tag>
+
+    <tag>bugfix-1.30</tag>
   </scm>
 
   <dependencies>
@@ -39,6 +42,21 @@
       <groupId>org.junit.jupiter</groupId>
       <artifactId>junit-jupiter</artifactId>
       <version>${junit-jupiter.version}</version>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>com.google.code.findbugs</groupId>
+      <artifactId>jsr305</artifactId>
+      <version>${findbugs.version}</version>
+    </dependency>
+
+    <!-- Binding/provider for Simple implementation, which outputs all events to System.err. Only messages of level INFO and higher are printed.
+    This binding may be useful in the context of small applications. -->
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-simple</artifactId>
+      <version>${slf4j-simple.version}</version>
       <scope>test</scope>
     </dependency>
 
@@ -106,10 +124,24 @@
       </plugin>
 
       <plugin>
+        <groupId>org.codehaus.gmavenplus</groupId>
+        <artifactId>gmavenplus-plugin</artifactId>
+        <version>${gmavenplus-plugin.version}</version>
+        <executions>
+          <execution>
+            <goals>
+              <goal>compileTests</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+
+      <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
         <version>${maven-surefire-plugin.version}</version>
       </plugin>
+
     </plugins>
   </build>
 </project>

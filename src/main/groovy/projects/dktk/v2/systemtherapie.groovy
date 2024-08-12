@@ -1,8 +1,11 @@
 package projects.dktk.v2
 
+import ca.uhn.fhir.model.api.TemporalPrecisionEnum
 import org.hl7.fhir.r4.model.MedicationStatement
 
 import static de.kairos.fhir.centraxx.metamodel.AbstractCode.CODE
+import static de.kairos.fhir.centraxx.metamodel.MultilingualEntry.LANG
+import static de.kairos.fhir.centraxx.metamodel.MultilingualEntry.VALUE
 import static de.kairos.fhir.centraxx.metamodel.RootEntities.systemTherapy
 
 /**
@@ -23,6 +26,10 @@ medicationStatement {
     profile "http://dktk.dkfz.de/fhir/StructureDefinition/onco-core-MedicationStatement-Systemtherapie"
   }
 
+  identifier {
+    value = context.source[systemTherapy().systemTherapyId()]
+  }
+
   status = MedicationStatement.MedicationStatementStatus.UNKNOWN
 
   category {
@@ -32,21 +39,28 @@ medicationStatement {
     }
   }
 
-  identifier {
-    value = context.source[systemTherapy().systemTherapyId()]
+  medication {
+    medicationCodeableConcept {
+      text = context.source[systemTherapy().description()] as String
+    }
   }
 
   subject {
     reference = "Patient/" + context.source[systemTherapy().patientContainer().id()]
   }
 
-  if (context.source[systemTherapy().episode()]) {
-    context_ {
-      reference = "Encounter/" + context.source[systemTherapy().episode().id()]
+  effectivePeriod {
+    start {
+      date = normalizeDate(context.source[systemTherapy().therapyStart()] as String)
+      precision = TemporalPrecisionEnum.DAY.name()
+    }
+    end {
+      date = normalizeDate(context.source[systemTherapy().therapyEnd()] as String)
+      precision = TemporalPrecisionEnum.DAY.name()
     }
   }
 
-  if (context.source[systemTherapy().tumour()]) {
+  if (context.source[systemTherapy().tumour()] && hasRelevantCode(context.source[systemTherapy().tumour().centraxxDiagnosis().diagnosisCode()] as String)) {
     reasonReference {
       reference = "Condition/" + context.source[systemTherapy().tumour().centraxxDiagnosis().id()]
     }
@@ -58,6 +72,43 @@ medicationStatement {
       valueCoding {
         system = "http://dktk.dkfz.de/fhir/onco/core/CodeSystem/SYSTIntentionCS"
         code = context.source[systemTherapy().intentionDict()]?.getAt(CODE)?.toString()?.toUpperCase()
+      }
+    }
+  }
+
+  if (context.source[systemTherapy().protocolTypeDict()]) {
+    extension {
+      url = "http://dktk.dkfz.de/fhir/StructureDefinition/onco-core-Extension-SystemischeTherapieProtokoll"
+      valueCodeableConcept {
+        coding {
+          // see http://fhir.org/guides/stats/codesystem-hl7.org.nz.fhir.ig.cca-sact-regimen-code.html
+          system = "https://standards.digital.health.nz/ns/sact-regimen-code"
+          code = context.source[systemTherapy().protocolTypeDict()]?.getAt(CODE)?.toString()
+        }
+      }
+    }
+  }
+
+  // Systemtherapie-Art => StellungZurOp
+  if (context.source[systemTherapy().therapyKindDict()]) {
+    extension {
+      url = "http://dktk.dkfz.de/fhir/StructureDefinition/onco-core-Extension-StellungZurOp"
+      valueCoding {
+        system = "http://dktk.dkfz.de/fhir/onco/core/CodeSystem/SYSTStellungOPCS"
+        code = context.source[systemTherapy().therapyKindDict()]?.getAt(CODE)?.toString()?.toUpperCase()
+        display = context.source[systemTherapy().therapyKindDict().nameMultilingualEntries()]?.find { it[LANG] == "de" }?.getAt(VALUE) as String
+      }
+    }
+  }
+
+  // Systemtherapie-Typ => StellungZurOp
+  if (context.source[systemTherapy().therapyTypeDict()]) {
+    extension {
+      url = "http://dktk.dkfz.de/fhir/StructureDefinition/onco-core-Extension-StellungZurOp"
+      valueCoding {
+        system = "http://dktk.dkfz.de/fhir/onco/core/CodeSystem/SYSTStellungOPCS"
+        code = context.source[systemTherapy().therapyTypeDict()]?.getAt(CODE)?.toString()?.toUpperCase()
+        display = context.source[systemTherapy().therapyTypeDict().nameMultilingualEntries()]?.find { it[LANG] == "de" }?.getAt(VALUE) as String
       }
     }
   }
@@ -103,4 +154,17 @@ static String findCategoryByProtocolCode(final String protocolCode) {
 
 static boolean containsIgnoreCase(final List<String> codeList, final String codeToCheck) {
   return codeList.stream().anyMatch({ it.equalsIgnoreCase(codeToCheck) })
+}
+
+/**
+ * removes milli seconds and time zone.
+ * @param dateTimeString the date time string
+ * @return the result might be something like "1989-01-15T00:00:00"
+ */
+static String normalizeDate(final String dateTimeString) {
+  return dateTimeString != null ? dateTimeString.substring(0, 19) : null
+}
+
+static boolean hasRelevantCode(final String icdCode) {
+  return icdCode != null && (icdCode.toUpperCase().startsWith('C') || icdCode.toUpperCase().startsWith('D'))
 }
