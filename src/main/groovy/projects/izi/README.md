@@ -1,4 +1,4 @@
-![Kairos Logo](https://www.kairos.de/app/uploads/kairos-logo-blue_iqvia.png "Kairos Logo")
+![Kairos Logo](https://kairos.de/wp-content/uploads/2023/11/bildschirm_KAIROS_RGB_einfach-e1699976791799.png "Kairos Logo")
 
 IZI Sync*
 ========================
@@ -14,9 +14,26 @@ IZI Sync*
 * All necessary master data must exist. Master data definitions can be imported by XML.  
 
 ---
-*With the kind support from  [Fraunhofer Institute for Cell Therapy and Immunology IZI](https://www.izi.fraunhofer.de/en.html).
+* With the kind support from  [Fraunhofer Institute for Cell Therapy and Immunology IZI](https://www.izi.fraunhofer.de/en.html).
 
 # Changelog
+
+# 2025-04-04
+* added date normalization to remove time zone from date strings
+
+# 2025-03-31
+* added solution for HDRP4 for syncing Findings with multiple SampleLaborMappings
+
+# 2025-03-20
+* Removed CIMD_ABWEICHUNGEN from export relevant LaborMethods
+
+## 2025-01-23
+
+* Fixed OrgUnit Filter to check parent OrgUnit for Aliquot samples
+
+## 2025-01-10
+
+* Added OrgUnit filter in specimen script for Hannover export
 
 ## 2024-02-19
 

@@ -1,20 +1,35 @@
 package projects.patientfinder.iqtrial
 
 import ca.uhn.fhir.model.api.TemporalPrecisionEnum
+import de.kairos.fhir.centraxx.metamodel.AttendingDoctor
+import de.kairos.fhir.centraxx.metamodel.CrfTemplateField
 import de.kairos.fhir.centraxx.metamodel.Episode
+import de.kairos.fhir.centraxx.metamodel.LaborFinding
+import de.kairos.fhir.centraxx.metamodel.LaborFindingLaborValue
+import de.kairos.fhir.centraxx.metamodel.LaborMapping
+import de.kairos.fhir.centraxx.metamodel.LaborMethod
+import de.kairos.fhir.centraxx.metamodel.LaborValue
+import de.kairos.fhir.centraxx.metamodel.OrganisationUnit
+import de.kairos.fhir.centraxx.metamodel.ValueReference
+import de.kairos.fhir.centraxx.metamodel.enums.ProcedureStatus
 import org.hl7.fhir.r4.model.Procedure
 
 import static de.kairos.fhir.centraxx.metamodel.AbstractIdContainer.PSN
-import static de.kairos.fhir.centraxx.metamodel.MultilingualEntry.LANG
-import static de.kairos.fhir.centraxx.metamodel.MultilingualEntry.VALUE
+import static de.kairos.fhir.centraxx.metamodel.Multilingual.LANGUAGE
+import static de.kairos.fhir.centraxx.metamodel.Multilingual.NAME
 import static de.kairos.fhir.centraxx.metamodel.RootEntities.medProcedure
+import static de.kairos.fhir.centraxx.metamodel.RootEntities.medication
+
+
 /**
  * Represented by CXX MedProcedure
+ * @since v.1.43.0, CXX.v.2024.5.2
  */
 procedure {
   id = "Procedure/" + context.source[medProcedure().id()]
 
-  status = Procedure.ProcedureStatus.UNKNOWN
+
+  status = mapStatus(context.source[medProcedure().status()] as ProcedureStatus)
 
   code {
     if (context.source[medProcedure().opsEntry()]) {
@@ -31,7 +46,7 @@ procedure {
         system = "https://fhir.centraxx.de/system/" + context.source[medProcedure().userDefinedCatalogEntry().catalog().code()]
         version = context.source[medProcedure().userDefinedCatalogEntry().catalog().version()]
         code = context.source[medProcedure().userDefinedCatalogEntry().code()] as String
-        display = context.source[medProcedure().userDefinedCatalogEntry().nameMultilingualEntries()]?.find { it[LANG] == "en" }?.getAt(VALUE)
+        display = context.source[medProcedure().userDefinedCatalogEntry().multilinguals()]?.find { it[LANGUAGE] == "en" }?.getAt(NAME)
       }
     }
 
@@ -40,6 +55,12 @@ procedure {
         code = context.source[medProcedure().procedureCode()] as String
         display = context.source[medProcedure().procedureText()] as String
       }
+    }
+  }
+
+  if (context.source[medProcedure().parent()]) {
+    partOf {
+      reference = "Procedure/" + context.source[medProcedure().parent().id()]
     }
   }
 
@@ -71,24 +92,11 @@ procedure {
     reference = "Patient/" + context.source[medProcedure().patientContainer().id()]
   }
 
-  if (!isFakeEpisode(context.source[medProcedure().episode()])) {
-    encounter {
-      reference = "Encounter/" + context.source[medProcedure().episode().id()]
-    }
-  }
-}
 
-static boolean isFakeEpisode(final def episode) {
-  if (episode == null) {
-    return true
+  encounter {
+    reference = "Encounter/" + context.source[medProcedure().episode().id()]
   }
 
-  if (["SACT", "COSD"].contains(episode[Episode.ENTITY_SOURCE])) {
-    return true
-  }
-
-  final def fakeId = episode[Episode.ID_CONTAINER]?.find { (it[PSN] as String).toUpperCase().startsWith("FAKE") }
-  return fakeId != null
 }
 
 /**
@@ -98,4 +106,50 @@ static boolean isFakeEpisode(final def episode) {
  */
 static String normalizeDate(final String dateTimeString) {
   return dateTimeString != null ? dateTimeString.substring(0, 19) : null
+}
+
+static Procedure.ProcedureStatus mapStatus(final ProcedureStatus procedureStatus) {
+  if (procedureStatus.equals(ProcedureStatus.COMPLETED)) {
+    return Procedure.ProcedureStatus.COMPLETED
+  }
+  if (procedureStatus.equals(ProcedureStatus.PREPARATION)) {
+    return Procedure.ProcedureStatus.PREPARATION
+  }
+  if (procedureStatus.equals(ProcedureStatus.IN_PROGRESS)) {
+    return Procedure.ProcedureStatus.INPROGRESS
+  }
+  if (procedureStatus.equals(ProcedureStatus.NOT_DONE)) {
+    return Procedure.ProcedureStatus.NOTDONE
+  }
+  if (procedureStatus.equals(ProcedureStatus.ON_HOLD)) {
+    return Procedure.ProcedureStatus.ONHOLD
+  }
+  if (procedureStatus.equals(ProcedureStatus.COMPLETED)) {
+    return Procedure.ProcedureStatus.COMPLETED
+  }
+  if (procedureStatus.equals(ProcedureStatus.ENTERED_IN_ERROR)) {
+    return Procedure.ProcedureStatus.ENTEREDINERROR
+  }
+  if (procedureStatus.equals(ProcedureStatus.UNKNOWN)) {
+    return Procedure.ProcedureStatus.UNKNOWN
+  }
+  return Procedure.ProcedureStatus.UNKNOWN
+}
+
+static Map<String, Object> getLflvMap(final def mapping, final Map<String, String> types) {
+  final Map<String, Object> lflvMap = [:]
+  if (!mapping) {
+    return lflvMap
+  }
+
+  types.each { final String lvCode, final String lvType ->
+    final def lflvForLv = mapping[LaborMapping.LABOR_FINDING][LaborFinding.LABOR_FINDING_LABOR_VALUES].find { final def lflv ->
+      lflv[LaborFindingLaborValue.CRF_TEMPLATE_FIELD][CrfTemplateField.LABOR_VALUE][LaborValue.CODE] == lvCode
+    }
+
+    if (lflvForLv && lflvForLv[lvType]) {
+      lflvMap[(lvCode)] = lflvForLv[lvType]
+    }
+  }
+  return lflvMap
 }

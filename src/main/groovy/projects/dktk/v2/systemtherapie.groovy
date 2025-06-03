@@ -69,9 +69,11 @@ medicationStatement {
   if (context.source[systemTherapy().intentionDict()]) {
     extension {
       url = "http://dktk.dkfz.de/fhir/StructureDefinition/onco-core-Extension-SYSTIntention"
-      valueCoding {
-        system = "http://dktk.dkfz.de/fhir/onco/core/CodeSystem/SYSTIntentionCS"
-        code = context.source[systemTherapy().intentionDict()]?.getAt(CODE)?.toString()?.toUpperCase()
+      valueCodeableConcept {
+        coding {
+          system = "http://dktk.dkfz.de/fhir/onco/core/CodeSystem/SYSTIntentionCS"
+          code = context.source[systemTherapy().intentionDict()]?.getAt(CODE)?.toString()?.toUpperCase()
+        }
       }
     }
   }
@@ -93,10 +95,12 @@ medicationStatement {
   if (context.source[systemTherapy().therapyKindDict()]) {
     extension {
       url = "http://dktk.dkfz.de/fhir/StructureDefinition/onco-core-Extension-StellungZurOp"
-      valueCoding {
-        system = "http://dktk.dkfz.de/fhir/onco/core/CodeSystem/SYSTStellungOPCS"
-        code = context.source[systemTherapy().therapyKindDict()]?.getAt(CODE)?.toString()?.toUpperCase()
-        display = context.source[systemTherapy().therapyKindDict().nameMultilingualEntries()]?.find { it[LANG] == "de" }?.getAt(VALUE) as String
+      valueCodeableConcept {
+        coding {
+          system = "http://dktk.dkfz.de/fhir/onco/core/CodeSystem/SYSTStellungOPCS"
+          code = context.source[systemTherapy().therapyKindDict()]?.getAt(CODE)?.toString()?.toUpperCase()
+          display = context.source[systemTherapy().therapyKindDict().nameMultilingualEntries()]?.find { it[LANG] == "de" }?.getAt(VALUE) as String
+        }
       }
     }
   }
@@ -105,10 +109,12 @@ medicationStatement {
   if (context.source[systemTherapy().therapyTypeDict()]) {
     extension {
       url = "http://dktk.dkfz.de/fhir/StructureDefinition/onco-core-Extension-StellungZurOp"
-      valueCoding {
+      valueCodeableConcept {
+        coding {
         system = "http://dktk.dkfz.de/fhir/onco/core/CodeSystem/SYSTStellungOPCS"
         code = context.source[systemTherapy().therapyTypeDict()]?.getAt(CODE)?.toString()?.toUpperCase()
         display = context.source[systemTherapy().therapyTypeDict().nameMultilingualEntries()]?.find { it[LANG] == "de" }?.getAt(VALUE) as String
+        }
       }
     }
   }
@@ -157,12 +163,12 @@ static boolean containsIgnoreCase(final List<String> codeList, final String code
 }
 
 /**
- * removes milli seconds and time zone.
+ * removes time zone and time.
  * @param dateTimeString the date time string
- * @return the result might be something like "1989-01-15T00:00:00"
+ * @return the result might be something like "1989-01-15"
  */
 static String normalizeDate(final String dateTimeString) {
-  return dateTimeString != null ? dateTimeString.substring(0, 19) : null
+  return dateTimeString != null ? dateTimeString.substring(0, 10) : null
 }
 
 static boolean hasRelevantCode(final String icdCode) {
